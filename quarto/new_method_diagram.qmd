@@ -1,0 +1,444 @@
+---
+title: "Heat Study: Updates 4.20.26"
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+---
+
+## Outline 
+
+::: {.incremental}
+1. Updates on **outdoor** temperature model & data preparation
+2. **Indoor** temperature assignments: moving from RECs to NREL ReStock
+3. Moving from linkage framework to predictive modeling framework
+4. Making predictive model approach more concrete with NREL temperature load variables 
+:::
+
+# Outdoor Temperature Updates
+
+# Indoor Temperature Updates 
+
+## Probablistic Linkage | (Hopefully) the last refresher {.smaller}
+
+```{=html}
+<style>
+/* Grouping/blocking variables (Climate, House Type, Year Built) - purple */
+.group-header { background-color: #b8a9c9; }
+.group-cell { background-color: #d9d0e3; }
+/* Distance matching variables (Total Rooms, Elec Expend) - blue */
+.distance-header { background-color: #8fafd7; }
+.distance-cell { background-color: #c5d5ea; }
+/* Linkage box */
+.linkage-box {
+  background: linear-gradient(135deg, #d97b3d 0%, #b85c28 100%);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: bold;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+}
+/* Result labels */
+.linked-label {
+  background-color: #fcd5b4;
+  color: #8b4513;
+  font-size: 0.7em;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.imputed-label {
+  background-color: #f5a5a5;
+  color: #8b0000;
+  font-size: 0.7em;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.warning-text {
+  margin-top: 30px;
+  padding: 15px;
+  background-color: #fff5f5;
+  border-left: 4px solid #d97b3d;
+  font-size: 0.85em;
+}
+</style>
+
+<div class="diagram-container">
+
+  <div class="data-section">
+    <div class="section-label">RECS Data</div>
+    <table class="data-table">
+      <tr>
+        <th class="group-header">Climate<br>Region</th>
+        <th class="group-header">House<br>Type</th>
+        <th class="group-header">Year<br>Built</th>
+        <th class="distance-header">Total<br>Rooms</th>
+        <th class="distance-header">Elec<br>Expend</th>
+        <th class="indoor-header">Prototype<br>Variables</th>
+      </tr>
+      <tr><td class="group-cell"></td><td class="group-cell"></td><td class="group-cell"></td><td class="distance-cell"></td><td class="distance-cell"></td><td class="indoor-cell"></td></tr>
+      <tr><td class="group-cell"></td><td class="group-cell"></td><td class="group-cell"></td><td class="distance-cell"></td><td class="distance-cell"></td><td class="indoor-cell"></td></tr>
+      <tr><td class="group-cell"></td><td class="group-cell"></td><td class="group-cell"></td><td class="distance-cell"></td><td class="distance-cell"></td><td class="indoor-cell"></td></tr>
+    </table>
+    <div style="font-size: 0.7em; color: #666; margin-top: 5px;">~3,700 households (36% usable)</div>
+
+    <div class="section-label" style="margin-top: 15px;">PUMS Data</div>
+    <table class="data-table">
+      <tr>
+        <th class="group-header">Climate<br>Region</th>
+        <th class="group-header">House<br>Type</th>
+        <th class="group-header">Year<br>Built</th>
+        <th class="distance-header">Total<br>Rooms</th>
+        <th class="distance-header">Elec<br>Expend</th>
+        <th class="pums-header">Health<br>Outcomes</th>
+      </tr>
+      <tr><td class="group-cell"></td><td class="group-cell"></td><td class="group-cell"></td><td class="distance-cell"></td><td class="distance-cell"></td><td class="pums-cell"></td></tr>
+      <tr><td class="group-cell"></td><td class="group-cell"></td><td class="group-cell"></td><td class="distance-cell"></td><td class="distance-cell"></td><td class="pums-cell"></td></tr>
+      <tr><td class="group-cell"></td><td class="group-cell"></td><td class="group-cell"></td><td class="distance-cell"></td><td class="distance-cell"></td><td class="pums-cell"></td></tr>
+      <tr><td class="group-cell"></td><td class="group-cell"></td><td class="group-cell"></td><td class="distance-cell"></td><td class="distance-cell"></td><td class="pums-cell"></td></tr>
+      <tr><td class="group-cell"></td><td class="group-cell"></td><td class="group-cell"></td><td class="distance-cell"></td><td class="distance-cell"></td><td class="pums-cell"></td></tr>
+    </table>
+    <div style="font-size: 0.7em; color: #666; margin-top: 5px;">~830K households</div>
+  </div>
+
+  <div class="arrow-container">→</div>
+
+  <div class="data-section" style="justify-content: center; margin-top: 30px;">
+    <div class="linkage-box">
+      🔗 Min Distance<br>Linkage
+    </div>
+    <div style="font-size: 0.65em; color: #666; margin-top: 8px; text-align: center;">
+      Group on climate, house type, year<br>
+      Match on rooms + electricity
+    </div>
+  </div>
+
+  <div class="arrow-container">→</div>
+
+  <div class="data-section">
+    <div class="section-label">Linked PUMS Data</div>
+    <table class="data-table">
+      <tr>
+        <th class="pums-header">Household<br>Chars</th>
+        <th class="pums-header">Health<br>Outcomes</th>
+        <th class="indoor-header">Prototype Variables<br>(from RECS)</th>
+      </tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td class="indoor-cell"><span class="linked-label">LINKED</span></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td class="indoor-cell"><span class="linked-label">LINKED</span></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td class="indoor-cell"><span class="linked-label">LINKED</span></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td class="indoor-cell"><span class="linked-label">LINKED</span></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td class="indoor-cell"><span class="linked-label">LINKED</span></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td style="background-color: #f5a5a5;"><span class="imputed-label">IMPUTED</span></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td style="background-color: #f5a5a5;"><span class="imputed-label">IMPUTED</span></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td style="background-color: #f5a5a5;"><span class="imputed-label">IMPUTED</span></td></tr>
+    </table>
+    <div style="font-size: 0.7em; color: #666; margin-top: 5px;">~830K households linked</div>
+  </div>
+
+</div>
+
+<div class="fragment">
+<strong>Goal:</strong> Assign each PUMs / MDAC respondent a set of housing prototype variables.
+</div>
+<div class="fragment">
+<strong>Problem:</strong> As we'll see in a few, it yields implausible results. (I tried so hard).
+</div>
+```
+
+## What is NREL ResStock? {.smaller}
+
+```{=html}
+<style>
+.resstock-explainer {
+  display: flex;
+  gap: 20px;
+  margin-top: 15px;
+  align-items: flex-start;
+}
+.resstock-col {
+  flex: 1;
+}
+.resstock-card {
+  background-color: #f0f6fb;
+  border-left: 4px solid #7eb8da;
+  border-radius: 6px;
+  padding: 12px 15px;
+  margin-bottom: 12px;
+  font-size: 0.8em;
+}
+.resstock-card .card-title {
+  font-weight: bold;
+  font-size: 0.95em;
+  margin-bottom: 5px;
+  color: #2a6496;
+}
+.resstock-card .card-body {
+  color: #444;
+  line-height: 1.4;
+}
+.resstock-highlight {
+  background-color: #e8f4ea;
+  border-left: 4px solid #5a9e6f;
+  border-radius: 6px;
+  padding: 12px 15px;
+  margin-top: 10px;
+  font-size: 0.82em;
+}
+.resstock-highlight .card-title {
+  font-weight: bold;
+  color: #2d6a4f;
+  margin-bottom: 5px;
+}
+</style>
+
+<div class="resstock-explainer">
+
+  <div class="resstock-col">
+    <div class="resstock-card fragment">
+      <div class="card-title">What it is</div>
+      <div class="card-body">A national <strong>residential building energy model</strong> developed by NREL. It simulates the physics-based energy performance of <strong>~550,000 synthetic U.S. housing units</strong> — each representing ~250 real homes.</div>
+    </div>
+    <div class="resstock-card fragment">
+      <div class="card-title">How it's built</div>
+      <div class="card-body">Housing characteristics (location, vintage, floor area, HVAC type, insulation, income, etc.) are drawn from national surveys (Census, ACS, AHS, RECS) as <strong>conditional probability distributions</strong>, then sampled to create a realistic synthetic stock.</div>
+    </div>
+  </div>
+
+  <div class="resstock-col">
+    <div class="resstock-card fragment">
+      <div class="card-title">What it simulates</div>
+      <div class="card-body">Each synthetic home is run through <strong>EnergyPlus</strong> — a physics simulation engine — producing 15-minute resolution outputs: energy use, cooling load delivered, heating load, indoor temperatures, and more.</div>
+    </div>
+    <div class="resstock-highlight fragment">
+      <div class="card-title">Why it matters for us</div>
+      <div class="card-body">Although ReStock characterizes a more recent year of housing stock (2019) than our MDAC cohort's first year (2008), its <strong>larger number of observations</strong>, <strong>improved geographic granularity</strong>, and <strong>direct applicability to Chima's building simulations</strong> make it a stronger data source than RECs. </div>
+    </div>
+  </div>
+
+</div>
+
+```
+
+
+
+
+## Why do I think this? (PUMs | RECs Prototype vs NREL ReStock)
+
+## New Approach: Predictive Modeling {.smaller}
+
+```{=html}
+<style>
+.data-table {
+  border-collapse: collapse;
+  font-size: 0.7em;
+  margin: 10px auto;
+}
+.data-table th {
+  padding: 6px 10px;
+  border: 1px solid #666;
+  font-weight: bold;
+  font-size: 0.85em;
+}
+.data-table td {
+  padding: 4px 10px;
+  border: 1px solid #999;
+  height: 18px;
+}
+.resstock-header { background-color: #7eb8da; }
+.resstock-cell { background-color: #b8d4e8; }
+.indoor-header { background-color: #f4a460; }
+.indoor-cell { background-color: #fcd5b4; }
+.pums-header { background-color: #9bc49b; }
+.pums-cell { background-color: #c6e0c6; }
+.predict-header { background-color: #d4a5d4; }
+.predict-cell { background-color: #e8cce8; }
+.section-label {
+  font-weight: bold;
+  font-size: 0.9em;
+  margin-bottom: 5px;
+  text-align: left;
+}
+.arrow-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+  color: #666;
+  margin: 0 15px;
+}
+.model-box {
+  background: linear-gradient(135deg, #69c 0%, #47a 100%);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: bold;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+}
+.diagram-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+.data-section {
+  display: flex;
+  flex-direction: column;
+}
+.goal-text {
+  margin-top: 30px;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-left: 4px solid #69c;
+  font-size: 0.85em;
+}
+.pipeline-container {
+  margin-top: 25px;
+  padding: 15px;
+  background-color: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+.pipeline-label {
+  font-weight: bold;
+  font-size: 0.85em;
+  margin-bottom: 12px;
+  color: #555;
+}
+.pipeline-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.pipeline-step {
+  padding: 10px 15px;
+  border-radius: 6px;
+  text-align: center;
+  min-width: 110px;
+}
+.pipeline-step.current {
+  background: linear-gradient(135deg, #69c 0%, #47a 100%);
+  color: white;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
+}
+.pipeline-step.future {
+  background-color: #e8e8e8;
+  color: #666;
+  border: 1px dashed #aaa;
+}
+.step-number {
+  font-size: 0.7em;
+  opacity: 0.8;
+}
+.step-title {
+  font-weight: bold;
+  font-size: 0.85em;
+  margin: 3px 0;
+}
+.step-desc {
+  font-size: 0.65em;
+  line-height: 1.3;
+}
+.pipeline-arrow {
+  font-size: 1.3em;
+  color: #999;
+}
+</style>
+
+<div class="diagram-container">
+
+  <div class="data-section">
+    <div class="section-label">NREL ResStock + EnergyPlus (Chima's Prototypes)</div>
+    <table class="data-table">
+      <tr>
+        <th class="resstock-header">Climate<br>Zone</th>
+        <th class="resstock-header">Type of<br>House</th>
+        <th class="resstock-header">Year<br>Built</th>
+        <th class="resstock-header">...</th>
+        <th class="indoor-header">Indoor<br>Temp 🌡️</th>
+      </tr>
+      <tr><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="indoor-cell"></td></tr>
+      <tr><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="indoor-cell"></td></tr>
+      <tr><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="indoor-cell"></td></tr>
+      <tr><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="indoor-cell"></td></tr>
+      <tr><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="indoor-cell"></td></tr>
+      <tr><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="resstock-cell"></td><td class="indoor-cell"></td></tr>
+    </table>
+  </div>
+
+  <div class="arrow-container">→</div>
+
+  <div class="data-section" style="justify-content: center; margin-top: 40px;">
+    <div class="model-box">
+      🔧 Build<br>Predictive Model
+    </div>
+  </div>
+
+  <div class="arrow-container">→</div>
+
+  <div class="data-section">
+    <div class="section-label">PUMS Microdata</div>
+    <table class="data-table">
+      <tr>
+        <th class="pums-header">Household<br>Chars</th>
+        <th class="pums-header">Heating/Cooling<br>Trends</th>
+        <th class="pums-header">PUMA<br>Sociodemo</th>
+        <th class="predict-header">Predicted<br>Temp 🌡️</th>
+      </tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td class="pums-cell"></td><td class="predict-cell"></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td class="pums-cell"></td><td class="predict-cell"></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td class="pums-cell"></td><td class="predict-cell"></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td class="pums-cell"></td><td class="predict-cell"></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td class="pums-cell"></td><td class="predict-cell"></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td class="pums-cell"></td><td class="predict-cell"></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td class="pums-cell"></td><td class="predict-cell"></td></tr>
+      <tr><td class="pums-cell"></td><td class="pums-cell"></td><td class="pums-cell"></td><td class="predict-cell"></td></tr>
+    </table>
+  </div>
+
+</div>
+
+<div class="fragment">
+<strong>Goal:</strong> Train model on ResStock (where we have simulated indoor temps), then apply to PUMS (where we have health outcomes) using predictors available in PUMS.
+</div>
+<div class="fragment">
+<strong>Key Difference:</strong> Rather than link every housing prototype variable to PUMs data, focus only <strong>indoor temperature</strong>.
+</div>
+```
+
+## Predictive Model Based Workflow {.smaller}
+
+```{=html}
+<div class="pipeline-container">
+  <div class="pipeline-label">Modeling Pipeline (stratified by climate zone)</div>
+  <div class="pipeline-steps">
+    <div class="pipeline-step current">
+      <div class="step-number">1</div>
+      <div class="step-title">Assess</div>
+      <div class="step-desc">Compare models<br>(LM, Lasso, Ridge,<br>XGB, RF) via 10-fold CV</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step future">
+      <div class="step-number">2</div>
+      <div class="step-title">Tune</div>
+      <div class="step-desc">Hyperparameter<br>tuning on<br>best model(s)</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step future">
+      <div class="step-number">3</div>
+      <div class="step-title">Holdout</div>
+      <div class="step-desc">Evaluate tuned<br>model on 20%<br>test set</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step future">
+      <div class="step-number">4</div>
+      <div class="step-title">Apply OOS</div>
+      <div class="step-desc">Predict indoor<br>temp for PUMS<br>respondents</div>
+    </div>
+  </div>
+</div>
+```
