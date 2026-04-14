@@ -11,7 +11,7 @@ format:
 ::: {.incremental}
 1. Updates on **outdoor** temperature model & data preparation
 2. **Indoor** temperature assignments: moving from RECs to NREL ReStock
-3. Moving from linkage framework to predictive modeling framework
+3. Re-thinking linkage framework 
 4. Making predictive model approach more concrete with NREL temperature load variables 
 :::
 
@@ -442,3 +442,51 @@ format:
   </div>
 </div>
 ```
+
+
+## Working with 15-minute interval ReStock Data {.smaller}
+
+Incorporating more granular indoor & outdoor temperature data quickly becomes a big
+data challenge:
+
+#### Napkin Math
+:::: {.columns}
+::: {.column width="50%"}
+```{r}
+#| echo: true
+#| collapse: true
+
+## For the whole country 
+scales::number(550000 * 4 * 24 * 365, scale = 1e-9, suffix = " billion", accuracy = 0.001)
+
+#' But we can reduce our overhead by working with daily values, which is more manageable
+#' Scaling to weeks, months etc., shrinks the overhead more.
+scales::number(550000 * 365, scale = 1e-6, suffix = " million", accuracy = 0.001)
+
+
+```
+
+Depending on how many sites, this number becomes even more manageable. 
+::: 
+
+#### Some Thoughts 
+::: {.column width="50%"}
+1. The more granular the outdoor temperature data, the more accurate our predictions will 
+be
+2. But the worse our computational problem will be. 
+3. 
+
+:::
+
+
+
+::::
+
+## Sample PA Query
+
+
+## Next Steps for Building out models 
+
+1. Getting data together
+2. Incorporating time and repeat observations into the model evaluation strategy
+3. Adding temperature predictors into the models. 
