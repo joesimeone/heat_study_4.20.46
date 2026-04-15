@@ -1,0 +1,71 @@
+---
+title: "Heat Study: Updates 4.20.26"
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+---
+
+
+## Working with NREL 15 minute data
+:::: {.columns}
+
+::: {.column width="50%"}
+#### Directory Structure
+```{r}
+#| echo: false
+#| warning: false
+
+
+
+fs::dir_tree(
+    here::here(
+        'partition_diagram'
+        )
+)
+```
+
+::: {.incremental}
+- The data live in a **hive partitioned** hosted on an **s3 bucket**. 1 file = 1 building's 15 minute increment output.
+- They're deployed this way because of the dataset's size (It's over 17 billion rows 🤯)
+:::
+
+:::
+
+
+:::  {.column width="50%"}
+::: {.fragment}
+#### File Itself 
+
+```{r}
+library(tidyverse)
+
+read_csv(
+    here::here('pa_sample_from_nrel_bucket.csv')) |>
+  select(
+    bldg_id,
+    timestamp,
+    cooling_load =
+      out.indoor_temperature.conditioned_space..c
+  ) |>
+  slice_head(n = 8) |>
+  tinytable::tt() |> 
+tinytable::style_tt(fontsize = 0.55)
+
+
+```
+
+- The building files themselves are one row of data per 15 minute energyPlus output. 
+
+:::
+:::
+
+::::
+
+##  Working with NREL 15 minute data
+
+::: {.incremental}
+1. Specialized tools like [duckdb](https://duckdb.org/), an embedded analytics database, can access these data structures efficiently.
+1. Because data are partitioned, we can skip reading the data that we don't need. 
+1. We can write SQL directly against the bucket, so only the aggregated results come into R
+:::
