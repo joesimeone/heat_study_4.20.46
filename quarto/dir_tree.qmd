@@ -7,6 +7,33 @@ format:
 ---
 
 
+## Where We Are {.smaller}
+
+::: {.columns}
+
+::: {.column width="5%"}
+:::
+
+::: {.column width="90%"}
+
+::: {.incremental}
+
+1. **Switched data sources**: Moved from RECs to **NREL ReStock** for housing characteristics and indoor temperature — better geographic coverage, higher N, and far richer indoor environment data.
+
+2. **Linkages didn't hold up**: When we validated RECs–PUMS linkages using ReStock as ground truth, performance was poor.
+
+3. **New strategy**: Instead of trying to link multiple housing characteristics at once, we build **predictive models of indoor temperature** and apply them out-of-sample to PUMS / MDAC. To practice, we've built and assessed models predicting indoor cooling load using the annual ReStock data.
+
+4. **Next step**: We can sharpen predictions further with more granular (daily?) target variables and a newly released **indoor temperature** variable for model training.
+
+:::
+:::
+
+::: {.column width="5%"}
+:::
+
+:::
+
 ## Working with NREL 15 minute data
 :::: {.columns}
 
